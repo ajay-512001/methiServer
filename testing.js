@@ -12,15 +12,16 @@ const REFRESH_SECRET_KEY = process.env.REFRESH_TOKEN_SECRET;
 
 
 testrouter.get("/test", async (req,res) => {
-    // let info = await pool.query("select * from excelcheck");
-    const forwardedIps = req.headers['x-forwarded-for'];
+    let info = await pool.query("select * from methi_user_master");
+    res.status(200).json(info.rows);
+/*     const forwardedIps = req.headers['x-forwarded-for'];
     const ipAddress = forwardedIps ? forwardedIps.split(',')[0] : req.ip;
-    const ua = await req.useragent;
+    const ua = await req.useragent; */
     /* res.status(200).json({data:ipAddress,info:{
         ua
     }});
  */
-    res.json({
+/*     res.json({
         browser: ua.browser,        // e.g., 'Chrome'
         version: ua.version,        // e.g., '88.0.4324.150'
         os: ua.os,                  // e.g., 'Windows 10'
@@ -28,7 +29,7 @@ testrouter.get("/test", async (req,res) => {
         isMobile: ua.isMobile,      // true or false
         isTablet: ua.isTablet,      // true or false
         isDesktop: ua.isDesktop,    // true or false
-    });
+    }); */
 
     // let info = await pool.query("insert into excelcheck (name, age) VALUES ($1, $2)",['sonal',38]);
     // res.status(200).json(info.rowCount);

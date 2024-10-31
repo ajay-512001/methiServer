@@ -9,6 +9,7 @@ const useragent = require('express-useragent');
 const middleAuthenication = require('./src/middleware/authentication.middlewar');
 const middleAuthorization = require('./src/middleware/authtokens.middleware');
 const testRoutes = require("./testing");
+const AuthRotes = require("./src/main/Authentication/Authentication.routes");
 
 /*------------------------All variable defined here -------------------------*/
 require('dotenv').config()
@@ -43,9 +44,9 @@ app.get("/", (req,res) => {
 })
 
 /*------------------------All rotes are routed here -------------------------*/
-app.use('/', middleAuthorization.authAccessToken, testRoutes);
+app.use('/',  testRoutes);
+app.use('/api/v1/auth/',  middleAuthenication.authentication, AuthRotes);
 
-//app.use('/', middleAuthenication.authentication, testRoutes);
 
 /*----------------------- Restarting server on any crash automatically -------------------------*/
 process.on('exit', (code) => {
