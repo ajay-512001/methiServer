@@ -13,8 +13,18 @@ const verifyOtp = (req,res)  => {
     authScript.verifyOtp(req,res);
 }
 
+const verifyToken = (req,res)  => {
+    authScript.verifyToken(req,res);
+}
+
+const verifyRefreshToken = (req,res)  => {
+    authScript.verifyRefreshTokenAndAssign(req,res);
+}
+
 module.exports = {
     signUp,
     signIn,
-    verifyOtp
+    verifyOtp,
+    verifyToken,
+    verifyRefreshToken
 }

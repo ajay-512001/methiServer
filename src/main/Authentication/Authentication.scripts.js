@@ -64,6 +64,37 @@ const authSignUp = async (req,res) => {
     }
 }
 
+
+const verifyToken = async (req,res) => {
+    const { token } = req.body;
+
+    try {
+        let user = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+        res.status(200).json({msg : "Token Is Ok" ,id:user.user_id, code :200, isComplete:false});
+    } catch (error) {
+        res.status(210).json({msg : "Token Expired" , code :210, isComplete:false});
+    }
+}
+
+const verifyRefreshTokenAndAssign = async (req,res) => {
+    const { refreshToken } = req.body;
+    const ua = await req.useragent;
+    const forwardedIps = req.headers['x-forwarded-for'];
+    const ipAddress = forwardedIps ? forwardedIps.split(',')[0] : req.ip;
+    try {
+       let user = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+       if(user.ipAddress == ipAddress && user.browser == ua.browser && user.os == ua.os){
+        let AccessToken =  await createAuthToken(user.email,user.user_id);
+        res.status(200).json({msg : "New Access Token" , token:AccessToken , code :200, isComplete:false});
+    } else{
+        res.status(401).json({msg : "Unathorized User" , code :401, isComplete:false});
+    }
+    } catch (error) {
+       res.status(411).json({msg : "Refresh Token Expired" , code :411, isComplete:false});
+    }
+}
+
+
 const verifyOtp =  async (req,res) => {
     const { user_id,otp } = req.body;
     try {
@@ -94,7 +125,6 @@ const verifyRefreshAndassignAccess = async (refreshToken,ipAddress,ua) => {
         res.status(401).json({result:{msg : "Unathorized User" , isComplete:false}});
     }
 }
-
 
 const createAuthToken = async (email,user_id) => {
      let AccessToken = await jwt.sign(
@@ -146,5 +176,7 @@ module.exports = {
     authSignIn,
     authSignUp,
     verifyRefreshAndassignAccess,
-    verifyOtp
+    verifyOtp,
+    verifyRefreshTokenAndAssign,
+    verifyToken
 }
