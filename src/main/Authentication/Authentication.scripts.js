@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt');
 const jwt = require("jsonwebtoken");
 const useragent = require('express-useragent');
 require('dotenv').config();
+const sendMail = require('../../utils/sendEmails/sendMailFunction')
 
 const authQueries = require('./Authentication.queries')
 
@@ -29,6 +30,7 @@ const authSignIn = async (req,res)  => {
                     const otp = await generateOtp();
                     let isotpUpdate = await pool.query(authQueries.updateOtp , [ user.rows[0].user_id , otp]);
                     res.status(202).json({msg : "Please verify with OTP to activate user.",isComplete:false, code :202});
+                    sendMail.module.sendNotificationRequest({otp_code : otp , to : email});
                 }
             }
         }else{
@@ -50,11 +52,11 @@ const authSignUp = async (req,res) => {
         }else{
             const hashPassword = await bcrypt.hash(password, saltRounds);
             const otp = await generateOtp();
-            let isuserCreated = await pool.query(authQueries.addUser , [ email, hashPassword, full_name, number, "false" , otp]);
+            let isuserCreated = await pool.query(authQueries.addUser , [ email, hashPassword, full_name, number, "false" , otp,0]);
             if(isuserCreated){
                 let userwhichiscreated =  await pool.query(authQueries.getUserId, [email]);
                 res.status(200).json({user_id: userwhichiscreated.rows[0].user_id,msg : "User created Successfully.",isComplete:true});
-                //sendMailFunction.sendNotificationRequest(req.body,"signup")
+                sendMail.module.sendNotificationRequest({otp_code : otp , to : email});
             }else{
                 return res.status(500).json({msg:"Something went wrong, Please try again later.",isComplete:false});
             }
@@ -96,12 +98,29 @@ const verifyRefreshTokenAndAssign = async (req,res) => {
 
 
 const verifyOtp =  async (req,res) => {
-    const { user_id,otp } = req.body;
+    const { user_id,otp,email_id,reason } = req.body;
+    let userOtp;
     try {
-        let userOtp = await pool.query( authQueries.getotp ,[parseInt(user_id)]);
+        if(user_id != undefined && user_id != null){
+            userOtp = await pool.query( authQueries.getotp ,[user_id]);
+        }else{
+            userOtp = await pool.query( authQueries.getotpbyEmail ,[email_id]);
+        }
         if(otp == userOtp.rows[0].temp_otp){
-            await pool.query( authQueries.getisactivetrue ,[user_id]);
-            return res.status(200).json({msg:"OTP Verfied",isComplete:true});
+            if(user_id != undefined && user_id != null){
+                await pool.query( authQueries.getisactivetrue ,[user_id]);
+            }else{
+                await pool.query( authQueries.getisactivetrue ,[userOtp.rows[0].user_id]);
+            }
+
+            if(reason == "signin"){
+                const token = await createAuthToken(email_id,userOtp.rows[0].user_id || user_id);
+                const refreshToken = await createRefreshToken(userOtp.rows[0].user_id || user_id,email_id,req);
+                return res.status(200).json({msg:"OTP Verfied",token : token, refreshToken : refreshToken ,data: {user_id:userOtp.rows[0].user_id || user_id }, isComplete:true});
+            }else{
+                return res.status(200).json({msg:"OTP Verfied",isComplete:true});
+            }
+            
         }else{
             return res.status(202).json({msg:"Wrong OTP",isComplete:false});
         }
