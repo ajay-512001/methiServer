@@ -10,6 +10,7 @@ const middleAuthenication = require('./src/middleware/authentication.middlewar')
 const middleAuthorization = require('./src/middleware/authtokens.middleware');
 const testRoutes = require("./testing");
 const AuthRotes = require("./src/main/Authentication/Authentication.routes");
+const employeeRotes = require("./src/main/employee/employee.routes");
 
 /*------------------------All variable defined here -------------------------*/
 require('dotenv').config()
@@ -46,6 +47,7 @@ app.get("/", (req,res) => {
 /*------------------------All rotes are routed here -------------------------*/
 app.use('/',  testRoutes);
 app.use('/api/v1/auth/',  middleAuthenication.authentication, AuthRotes);
+app.use('/api/v1/employee/',  middleAuthorization.authAccessToken, employeeRotes);
 
 
 /*----------------------- Restarting server on any crash automatically -------------------------*/

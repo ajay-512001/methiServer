@@ -129,12 +129,13 @@ const verifyOtp =  async (req,res) => {
     }
 }
 
-const verifyRefreshAndassignAccess = async (refreshToken,ipAddress,ua) => {
+const verifyRefreshAndassignAccess = async (refreshToken,ipAddress,ua,res) => {
+    
     let RefreshToken = refreshToken; /* req.cookies?.refreshToken */
     if(RefreshToken){
         let user = jwt.verify(RefreshToken, process.env.REFRESH_TOKEN_SECRET);
         if(user.ipAddress == ipAddress && user.browser == ua.browser && user.os == ua.os){
-            let AccessToken =  await createAuthToken(user.user_id,user.email)
+            let AccessToken =  await createAuthToken(user.email,user.user_id)
             return AccessToken;
         } else{
             res.status(401).json({result:{msg : "Unathorized User" , isComplete:false}});
