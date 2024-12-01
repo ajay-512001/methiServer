@@ -30,7 +30,7 @@ const authSignIn = async (req,res)  => {
                     const otp = await generateOtp();
                     let isotpUpdate = await pool.query(authQueries.updateOtp , [ user.rows[0].user_id , otp]);
                     res.status(202).json({msg : "Please verify with OTP to activate user.",isComplete:false, code :202});
-                    sendMail.module.sendNotificationRequest({otp_code : otp , to : email});
+                    sendMail.module.sendNotificationRequest({otp_code : otp , to : email},"verificationEmail");
                 }
             }
         }else{
@@ -55,13 +55,16 @@ const authSignUp = async (req,res) => {
             let isuserCreated = await pool.query(authQueries.addUser , [ email, hashPassword, full_name, number, "false" , otp,0]);
             if(isuserCreated){
                 let userwhichiscreated =  await pool.query(authQueries.getUserId, [email]);
+                const result = await pool.query('SELECT NOW() AS current_timestamp');
+                await pool.query(authQueries.addEmployMasterEntry , [ userwhichiscreated.rows[0].user_id, result.rows[0].current_timestamp, true]);
                 res.status(200).json({user_id: userwhichiscreated.rows[0].user_id,msg : "User created Successfully.",isComplete:true});
-                sendMail.module.sendNotificationRequest({otp_code : otp , to : email});
+                sendMail.module.sendNotificationRequest({otp_code : otp , to : email},"verificationEmail");
             }else{
                 return res.status(500).json({msg:"Something went wrong, Please try again later.",isComplete:false});
             }
         }
     } catch (error) {
+        console.log(error)
         return res.status(500).json({result:{msg:"server encountered error.", error: error.message,isComplete:false}});
     }
 }
@@ -116,11 +119,12 @@ const verifyOtp =  async (req,res) => {
             if(reason == "signin"){
                 const token = await createAuthToken(email_id,userOtp.rows[0].user_id || user_id);
                 const refreshToken = await createRefreshToken(userOtp.rows[0].user_id || user_id,email_id,req);
+                await sendMail.module.sendNotificationRequest({user_name : userOtp.rows[0].full_name , to : email_id},"verificationSuccess");
                 return res.status(200).json({msg:"OTP Verfied",token : token, refreshToken : refreshToken ,data: {user_id:userOtp.rows[0].user_id || user_id }, isComplete:true});
             }else{
+                await sendMail.module.sendNotificationRequest({user_name : userOtp.rows[0].full_name , to : email_id},"verificationSuccess");
                 return res.status(200).json({msg:"OTP Verfied",isComplete:true});
             }
-            
         }else{
             return res.status(202).json({msg:"Wrong OTP",isComplete:false});
         }
@@ -198,5 +202,6 @@ module.exports = {
     verifyRefreshAndassignAccess,
     verifyOtp,
     verifyRefreshTokenAndAssign,
-    verifyToken
+    verifyToken,
+    generateOtp
 }

@@ -47,7 +47,8 @@ app.get("/", (req,res) => {
 /*------------------------All rotes are routed here -------------------------*/
 app.use('/',  testRoutes);
 app.use('/api/v1/auth/',  middleAuthenication.authentication, AuthRotes);
-app.use('/api/v1/employee/',  middleAuthorization.authAccessToken, employeeRotes);
+//app.use('/api/v1/employee/',  middleAuthorization.authAccessToken, employeeRotes);
+app.use('/api/v1/employee/', employeeRotes);
 
 
 /*----------------------- Restarting server on any crash automatically -------------------------*/
